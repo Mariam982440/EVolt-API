@@ -66,4 +66,12 @@ class StationController extends Controller
 
         return response()->json($station, 200);
     }
+
+    public function destroy($id)
+    {
+        $station = Station::findOrFail($id);
+        $station->delete();
+
+        return response()->json(['message' => 'Borne supprimée'], 200);
+    }
 }

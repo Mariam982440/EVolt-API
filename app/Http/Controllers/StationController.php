@@ -22,7 +22,27 @@ class StationController extends Controller
         }
 
         return response()->json($query->get(),200);
-
     }
+    public function store(Request $request){
+        $validated = $request->validate([
+            'name' => 'required|string|max:255',
+            'connector_type_id' => 'required|exists:connector_types,id',
+            'latitude' => 'required|numeric',
+            'longitude' => 'required|numeric',
+            'power_kw' => 'required|integer|min:1',
+        ]);
+
+        $station = Station::create([
+            'name' => $validated['name'],
+            'slug' => Str::slug($validated['name']) . '-' . rand(100, 999), // Slug unique
+            'connector_type_id' => $validated['connector_type_id'],
+            'latitude' => $validated['latitude'],
+            'longitude' => $validated['longitude'],
+            'power_kw' => $validated['power_kw'],
+            'status' => 'available',
+        ]);
+        return response()->json($station,201);
+    }
+    
     
 }

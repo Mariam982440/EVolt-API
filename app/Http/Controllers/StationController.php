@@ -44,5 +44,8 @@ class StationController extends Controller
         return response()->json($station,201);
     }
     
-    
+    public function show($id){
+        $station = Station::with('connectorType')->findOrFail($id);
+        return response()->json($station, 200);
+    }
 }

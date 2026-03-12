@@ -48,4 +48,22 @@ class StationController extends Controller
         $station = Station::with('connectorType')->findOrFail($id);
         return response()->json($station, 200);
     }
+
+    public function update(Request $request, $id)
+    {
+        $station = Station::findOrFail($id);
+
+        $validated = $request->validate([
+            'name' => 'sometimes|string',
+            'connector_type_id' => 'sometimes|exists:connector_types,id',
+            'latitude' => 'sometimes|numeric',
+            'longitude' => 'sometimes|numeric',
+            'power_kw' => 'sometimes|integer',
+            'status' => 'sometimes|in:available,maintenance',
+        ]);
+
+        $station->update($validated);
+
+        return response()->json($station, 200);
+    }
 }

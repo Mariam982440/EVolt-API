@@ -76,7 +76,7 @@ class StationController extends Controller
         return response()->json(['message' => 'Borne supprimée'], 200);
     }
 
-    // Dans StationController.php ou AdminController.php
+    
 
     public function getStats()
     {
@@ -85,10 +85,10 @@ class StationController extends Controller
 
         // énergie totale délivrée (1h à 50kW = 50kWh)
         // on fait la somme de (puissance de la borne * durée de charge en heure)
-        $totalEnergy = Reservation::where('status', 'completed')
-            ->join('stations', 'reservations.station_id', '=', 'stations.id')
-            ->selectRaw('SUM(stations.power_kw * (reservations.duration_minutes / 60.0)) as total_kwh')
-            ->first();
+        $totalEnergy = Reservation::where('reservations.status', 'completed') // <--- Précise la table
+        ->join('stations', 'reservations.station_id', '=', 'stations.id')
+        ->selectRaw('SUM(stations.power_kw * (reservations.duration_minutes / 60.0)) as total_kwh')
+        ->first();
 
         // bornes les plus populaires
         $popularStations = Station::withCount('reservations')

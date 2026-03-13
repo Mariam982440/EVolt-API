@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Station;
+use App\Models\Reservation;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
 
@@ -73,5 +74,32 @@ class StationController extends Controller
         $station->delete();
 
         return response()->json(['message' => 'Borne supprimée'], 200);
+    }
+
+    // Dans StationController.php ou AdminController.php
+
+    public function getStats()
+    {
+        // nombre total de réservations terminées
+        $totalSessions = Reservation::where('status', 'completed')->count();
+
+        // énergie totale délivrée (1h à 50kW = 50kWh)
+        // on fait la somme de (puissance de la borne * durée de charge en heure)
+        $totalEnergy = Reservation::where('status', 'completed')
+            ->join('stations', 'reservations.station_id', '=', 'stations.id')
+            ->selectRaw('SUM(stations.power_kw * (reservations.duration_minutes / 60.0)) as total_kwh')
+            ->first();
+
+        // bornes les plus populaires
+        $popularStations = Station::withCount('reservations')
+            ->orderBy('reservations_count', 'desc')
+            ->take(3)
+            ->get();
+
+        return response()->json([
+            'total_completed_sessions' => $totalSessions,
+            'total_energy_delivered_kwh' => round($totalEnergy->total_kwh, 2),
+            'top_stations' => $popularStations
+        ]);
     }
 }

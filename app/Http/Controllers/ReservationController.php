@@ -77,4 +77,44 @@ class ReservationController extends Controller
 
         return response()->json(['message' => 'Réservation annulée avec succès.']);
     }
+    
+    public function update(Request $request, $id)
+    {
+        $reservation = $request->user()->reservations()->findOrFail($id);
+
+        $request->validate([
+            'start_time' => 'sometimes|date|after:now',
+            'duration_minutes' => 'sometimes|integer|min:15|max:240',
+        ]);
+
+        $startTime = $request->has('start_time') ? Carbon::parse($request->start_time) : $reservation->start_time;
+        $duration = $request->has('duration_minutes') ? $request->duration_minutes : $reservation->duration_minutes;
+        $endTime = $startTime->copy()->addMinutes($duration);
+
+        // verification des conflits (en excluant la réservation actuelle elle-même)
+        $conflict = Reservation::where('station_id', $reservation->station_id)
+            ->where('id', '!=', $id) // TRÈS IMPORTANT : ne pas se comparer à soi-même
+            ->where('status', 'scheduled')
+            ->where(function ($query) use ($startTime, $endTime) {
+                $query->where('start_time', '<', $endTime)
+                    ->where('end_time', '>', $startTime);
+            })
+            ->exists();
+
+        if ($conflict) {
+            return response()->json(['message' => 'Ce nouveau créneau est déjà pris.'], 409);
+        }
+
+        // mise à jour
+        $reservation->update([
+            'start_time' => $startTime,
+            'end_time' => $endTime,
+            'duration_minutes' => $duration
+        ]);
+
+        return response()->json([
+            'message' => 'Réservation mise à jour avec succès',
+            'data' => $reservation
+        ]);
+    }
 }

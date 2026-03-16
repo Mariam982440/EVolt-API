@@ -6,6 +6,7 @@ use Illuminate\Http\Request;
 use App\Models\Reservation;
 use App\Models\Station;
 use Carbon\Carbon;
+use App\Jobs\UpdateReservationStatus;
 
 
 class ReservationController extends Controller
@@ -57,6 +58,10 @@ class ReservationController extends Controller
             'status' => 'scheduled'
         ]);
 
+        // on calcule le délai : c'est l'heure de fin (end_time)
+        UpdateReservationStatus::dispatch($reservation->id)
+            ->delay($reservation->end_time);
+
         return response()->json([
             'message' => 'Réservation réussie !',
             'data' => $reservation->load('station')
@@ -93,7 +98,7 @@ class ReservationController extends Controller
 
         // verification des conflits (en excluant la réservation actuelle elle-même)
         $conflict = Reservation::where('station_id', $reservation->station_id)
-            ->where('id', '!=', $id) // TRÈS IMPORTANT : ne pas se comparer à soi-même
+            ->where('id', '!=', $id) // ne pas se comparer à soi-même
             ->where('status', 'scheduled')
             ->where(function ($query) use ($startTime, $endTime) {
                 $query->where('start_time', '<', $endTime)

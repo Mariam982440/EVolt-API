@@ -31,7 +31,7 @@ class UpdateReservationStatus implements ShouldQueue
     
             $reservation->update(['status' => 'completed']);
 
-            // 2. Optionnel : On peut envoyer un log ou une notification ici
+            // on envoie un log 
             \Log::info("La borne {$reservation->station_id} a été libérée automatiquement.");
         }
     }

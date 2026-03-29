@@ -36,9 +36,8 @@ class ReservationController extends Controller
             return response()->json(['message' => 'Cette borne est actuellement en maintenance.'], 422);
         }
 
-        // une réservation existe si : (début1 < fin2) et (fin1 > début2)
         $conflict = Reservation::where('station_id', $stationId)
-            ->where('status', 'scheduled') // seulement les réservations confirmées
+            ->where('status', 'scheduled') 
             ->where(function ($query) use ($startTime, $endTime) {
                 $query->where('start_time', '<', $endTime)
                       ->where('end_time', '>', $startTime);
@@ -58,7 +57,7 @@ class ReservationController extends Controller
             'status' => 'scheduled'
         ]);
 
-        // on calcule le délai : c'est l'heure de fin (end_time)
+        // on calcule le délai c'est l'heure de fin
         UpdateReservationStatus::dispatch($reservation->id)
             ->delay($reservation->end_time);
 
